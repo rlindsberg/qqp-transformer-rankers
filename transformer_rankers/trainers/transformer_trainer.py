@@ -176,8 +176,8 @@ class TransformerTrainer:
             # at the end of each epoch
             checkpoint_path = f'trained_model_epoch_{epoch}'
             pointwise_bert.BertForPointwiseLearning.save_pretrained(self.model, checkpoint_path)
-            wandb.save(checkpoint_path + 'config.json')
-            wandb.save(checkpoint_path + 'pytorch_model.bin')
+            wandb.save(checkpoint_path + '/config.json')
+            wandb.save(checkpoint_path + '/pytorch_model.bin')
             logging.info('Model checkpoint saved to wandb')
 
     def predict(self, loader):
