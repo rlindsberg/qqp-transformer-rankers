@@ -3,17 +3,19 @@ from transformer_rankers.models.losses import label_smoothing
 from torch import nn
 from IPython import embed
 
+
 class BertForPairwiseLearning(modeling_bert.BertPreTrainedModel):
     """
     BERT based model for pairwise learning. It expects both the <q, positive_doc> and the <q, negative_doc>
     for doing the forward pass. The loss is cross-entropy for the difference between positive_doc and negative_doc
-    scores (labels are 1 if score positive_neg > score negative_doc otherwise 0) based on 
+    scores (labels are 1 if score positive_neg > score negative_doc otherwise 0) based on
     "Learning to Rank using Gradient Descent" 2005 ICML.
     """
+
     def __init__(self, config, loss_function="cross-entropy", smoothing=0.1):
         super().__init__(config)
 
-        #There should be at least relevant and non relevant options.
+        # There should be at least relevant and non relevant options.
         self.num_labels = config.num_labels
         self.bert = modeling_bert.BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -27,16 +29,16 @@ class BertForPairwiseLearning(modeling_bert.BertPreTrainedModel):
         self.init_weights()
 
     def forward(
-        self,
-        input_ids_pos=None,
-        attention_mask_pos=None,
-        token_type_ids_pos=None,
-        input_ids_neg=None,
-        attention_mask_neg=None,
-        token_type_ids_neg=None,
-        labels=None
+            self,
+            input_ids_pos=None,
+            attention_mask_pos=None,
+            token_type_ids_pos=None,
+            input_ids_neg=None,
+            attention_mask_neg=None,
+            token_type_ids_neg=None,
+            labels=None
     ):
-        #forward pass for positive instances
+        # forward pass for positive instances
         outputs_pos = self.bert(
             input_ids_pos,
             attention_mask=attention_mask_pos,
@@ -46,7 +48,7 @@ class BertForPairwiseLearning(modeling_bert.BertPreTrainedModel):
         pooled_output_pos = self.dropout(pooled_output_pos)
         logits_pos = self.classifier(pooled_output_pos)
 
-        #forward pass for negative instances
+        # forward pass for negative instances
         outputs_neg = self.bert(
             input_ids_neg,
             attention_mask=attention_mask_neg,
@@ -58,7 +60,7 @@ class BertForPairwiseLearning(modeling_bert.BertPreTrainedModel):
 
         logits_diff = logits_pos - logits_neg
 
-        #Calculating Cross entropy loss for pairs <q,d1,d2>
+        # Calculating Cross entropy loss for pairs <q,d1,d2>
         # based on "Learning to Rank using Gradient Descent" 2005 ICML
         loss = None
         if labels is not None:

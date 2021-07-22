@@ -3,16 +3,18 @@ from transformer_rankers.models.losses import label_smoothing
 from torch import nn
 from IPython import embed
 
+
 class BertForPointwiseLearning(modeling_bert.BertPreTrainedModel):
     """
     BERT based model for pointwise learning to rank. It is almost identical to
-    huggingface's BertForSequenceClassification, for the case when num_labels >1 
+    huggingface's BertForSequenceClassification, for the case when num_labels >1
     (classification).
     """
+
     def __init__(self, config, loss_function="cross-entropy", smoothing=0.1):
         super().__init__(config)
 
-        #There should be at least relevant and non relevant options (>2).
+        # There should be at least relevant and non relevant options (>2).
         self.num_labels = config.num_labels
         self.bert = modeling_bert.BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -27,13 +29,13 @@ class BertForPointwiseLearning(modeling_bert.BertPreTrainedModel):
         self.init_weights()
 
     def forward(
-        self,
-        input_ids=None,
-        attention_mask=None,
-        token_type_ids=None,
-        labels=None
+            self,
+            input_ids=None,
+            attention_mask=None,
+            token_type_ids=None,
+            labels=None
     ):
-        #forward pass for positive instances
+        # forward pass for positive instances
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,

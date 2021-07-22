@@ -13,12 +13,12 @@ def transform_trec2020pr_to_dfs(path):
     to train, valid and test dfs containing only positive query-passage combinations.
 
     Args:
-        path: str with the path for the TREC folder containing: 
+        path: str with the path for the TREC folder containing:
             - collection.tar.gz (uncompressed: collection.tsv)
             - queries.tar.gz (uncompressed: queries.train.tsv, queries.dev.tsv)
             - qrels.dev.tsv
             - qrels.train.tsv
-        
+
     Returns: (train, valid, test) pandas DataFrames
     """
     query_df_train = pd.read_csv("{}/queries.train.tsv".format(path), names=['qid','query_string'], sep='\t')

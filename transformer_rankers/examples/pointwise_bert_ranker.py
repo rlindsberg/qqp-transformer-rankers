@@ -1,6 +1,6 @@
 from transformer_rankers.trainers import transformer_trainer
 from transformer_rankers.datasets import dataset, preprocess_crr, preprocess_sqr
-from transformer_rankers.negative_samplers import negative_sampling 
+from transformer_rankers.negative_samplers import negative_sampling
 from transformer_rankers.eval import results_analyses_tools
 from transformer_rankers.models import pointwise_bert
 
@@ -38,12 +38,12 @@ def run_experiment(args):
     # tokenizer = BertTokenizer.from_pretrained(args.transformer_model)
     tokenizer = BertTokenizerFast.from_pretrained(args.transformer_model)
     # Conversation Response Ranking datasets needs special tokens
-    if args.task in ["mantis", "msdialog", "ubuntu_dstc8"]: 
+    if args.task in ["mantis", "msdialog", "ubuntu_dstc8"]:
         special_tokens_dict = {'additional_special_tokens': ['[UTTERANCE_SEP]', '[TURN_SEP]'] }
-        tokenizer.add_special_tokens(special_tokens_dict)        
+        tokenizer.add_special_tokens(special_tokens_dict)
 
     #Load datasets
-    train = pd.read_csv(args.data_folder+args.task+"/train.tsv", sep="\t", 
+    train = pd.read_csv(args.data_folder+args.task+"/train.tsv", sep="\t",
                         nrows=args.sample_data if args.sample_data != -1 else None)
     valid = pd.read_csv(args.data_folder+args.task+"/test.tsv", sep="\t",
                         nrows=args.sample_data if args.sample_data != -1 else None)
@@ -55,11 +55,11 @@ def run_experiment(args):
     if args.train_negative_sampler == 'random':
         ns_train = negative_sampling.RandomNegativeSampler(list(train[document_col].values), args.num_ns_train)
     elif args.train_negative_sampler == 'bm25':
-        ns_train = negative_sampling.BM25NegativeSamplerPyserini(list(train[document_col].values), args.num_ns_train, 
+        ns_train = negative_sampling.BM25NegativeSamplerPyserini(list(train[document_col].values), args.num_ns_train,
                     args.data_folder+args.task+"/anserini_train/", args.sample_data, args.anserini_folder)
     elif args.train_negative_sampler == 'sentenceBERT':
-        ns_train = negative_sampling.SentenceBERTNegativeSampler(list(train[document_col].values), args.num_ns_train, 
-                    args.data_folder+args.task+"/train_sentenceBERTembeds", args.sample_data, args.bert_sentence_model)        
+        ns_train = negative_sampling.SentenceBERTNegativeSampler(list(train[document_col].values), args.num_ns_train,
+                    args.data_folder+args.task+"/train_sentenceBERTembeds", args.sample_data, args.bert_sentence_model)
 
     if args.test_negative_sampler == 'random':
         ns_val = negative_sampling.RandomNegativeSampler(list(valid[document_col].values) + list(train[document_col].values), args.num_ns_eval)
@@ -72,25 +72,25 @@ def run_experiment(args):
 
     #Create the loaders for the datasets, with the respective negative samplers
     loader = dataset.QueryDocumentDataLoader
-    
+
     dataloader = loader(train, valid, valid,
                         tokenizer, ns_train, ns_val,
-                        'classification', args.train_batch_size, 
-                        args.val_batch_size, args.max_seq_len, 
+                        'classification', args.train_batch_size,
+                        args.val_batch_size, args.max_seq_len,
                         args.sample_data, args.data_folder + args.task)
 
     train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
 
     #Instantiate transformer model to be used
     model = pointwise_bert.BertForPointwiseLearning.from_pretrained(args.transformer_model,
-            num_labels=num_labels, loss_function=args.loss_function, smoothing=args.smoothing)        
+            num_labels=num_labels, loss_function=args.loss_function, smoothing=args.smoothing)
     model.resize_token_embeddings(len(dataloader.tokenizer))
 
     #Instantiate trainer that handles fitting.
-    trainer = transformer_trainer.TransformerTrainer(model, train_loader, val_loader, test_loader, 
+    trainer = transformer_trainer.TransformerTrainer(model, train_loader, val_loader, test_loader,
                                  args.num_ns_eval, "classification", tokenizer,
                                  args.validate_every_epochs, args.num_validation_batches,
-                                 args.num_epochs, args.lr, args.sacred_ex, args.validate_every_steps, 
+                                 args.num_epochs, args.lr, args.sacred_ex, args.validate_every_steps,
                                  validation_metric='R_10@1', num_training_instances=args.num_training_instances)
 
     #Train
@@ -123,13 +123,13 @@ def run_experiment(args):
         torch.save(model.state_dict(), args.output_dir+"/"+args.run_id+"/model")
 
     #In case we want to get uncertainty estimations at prediction time
-    if args.predict_with_uncertainty_estimation:  
+    if args.predict_with_uncertainty_estimation:
         logging.info("Predicting with MC dropout for the validation set.")
         preds, labels, softmax_logits, foward_passes_preds, uncertainties = trainer.test_with_dropout(args.num_foward_prediction_passes)
         res = results_analyses_tools.evaluate_and_aggregate(preds, labels, validation_metrics)
         for metric, v in res.items():
             logging.info("Test (w. dropout and {} foward passes) {} : {:3f}".format(args.num_foward_prediction_passes, metric, v))
-        
+
         max_preds_column = max([len(l) for l in preds])
         preds_df = pd.DataFrame(preds, columns=["prediction_"+str(i) for i in range(max_preds_column)])
         preds_df.to_csv(args.output_dir+"/"+args.run_id+"/predictions_with_dropout.csv", index=False)
@@ -143,7 +143,7 @@ def run_experiment(args):
 
         labels_df = pd.DataFrame(labels, columns=["label_"+str(i) for i in range(max_preds_column)])
         labels_df.to_csv(args.output_dir+"/"+args.run_id+"/labels.csv", index=False)
-        
+
         uncertainties_df = pd.DataFrame(uncertainties, columns=["uncertainty_"+str(i) for i in range(max_preds_column)])
         uncertainties_df.to_csv(args.output_dir+"/"+args.run_id+"/uncertainties.csv", index=False)
 
@@ -227,7 +227,7 @@ def main():
     ex.add_config({'args': args})
 
     wandb.init(project=args.wandb_project)
-    wandb.config.update(args)   
+    wandb.config.update(args)
     return ex.run()
 
 if __name__ == "__main__":

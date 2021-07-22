@@ -8,7 +8,7 @@ TRAIN_INSTANCES=300000
 WANDB_PROJECT='library-crr-bert-baseline'
 
 for SEED in 1 2 3 4 5
-do 
+do
     for TASK in 'mantis' 'msdialog' 'ubuntu_dstc8'
     do
         python ../examples/pointwise_bert_ranker.py \
@@ -30,6 +30,6 @@ do
             --num_ns_eval 9 \
             --seed $SEED \
             --anserini_folder $ANSERINI_FOLDER \
-            --wandb_project $WANDB_PROJECT        
+            --wandb_project $WANDB_PROJECT
     done
 done

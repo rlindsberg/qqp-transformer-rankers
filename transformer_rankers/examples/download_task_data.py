@@ -13,7 +13,7 @@ def main():
                         help="the task to download [{}]".format(",".join(downloader.TASK_TO_URLS.keys())))
     parser.add_argument("--data_folder", default=None, type=str, required=True,
                         help="the folder to save the processed data")
-    
+
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO,

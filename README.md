@@ -9,7 +9,7 @@
 <img alt="license" src="https://img.shields.io/badge/License-MIT-blue.svg">
 </a>
 
-A library to conduct ranking experiments with transformers. 
+A library to conduct ranking experiments with transformers.
 
 
 ## Setup
@@ -43,7 +43,7 @@ And train BERT for pointwise learning to rank with randomly sampled negative sam
 from transformer_rankers.models import pointwise_bert
 from transformer_rankers.trainers import transformer_trainer
 from transformer_rankers.datasets import dataset, preprocess_crr
-from transformer_rankers.negative_samplers import negative_sampling 
+from transformer_rankers.negative_samplers import negative_sampling
 from transformer_rankers.eval import results_analyses_tools
 
 #Load the dataset
@@ -63,9 +63,9 @@ tokenizer.add_special_tokens(special_tokens_dict)
 
 #Create the loaders for the datasets, with the respective negative samplers        
 dataloader = dataset.QueryDocumentDataLoader(train_df=train, val_df=valid, test_df=valid,
-                                tokenizer=tokenizer, negative_sampler_train=ns_train, 
-                                negative_sampler_val=ns_val, task_type='classification', 
-                                train_batch_size=6, val_batch_size=6, max_seq_len=512, 
+                                tokenizer=tokenizer, negative_sampler_train=ns_train,
+                                negative_sampler_val=ns_val, task_type='classification',
+                                train_batch_size=6, val_batch_size=6, max_seq_len=512,
                                 sample_data=-1, cache_path="{}/{}".format(data_folder, task))
 
 train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
@@ -73,11 +73,11 @@ train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
 
 model = pointwise_bert.BertForPointwiseLearning.from_pretrained('bert-base-cased')
 # we added [UTTERANCE_SEP] and [TURN_SEP] to the vocabulary so we need to resize the token embeddings
-model.resize_token_embeddings(len(dataloader.tokenizer)) 
+model.resize_token_embeddings(len(dataloader.tokenizer))
 
 #Instantiate trainer that handles fitting.
 trainer = transformer_trainer.TransformerTrainer(model=model,train_loader=train_loader,
-                                val_loader=val_loader, test_loader=test_loader, 
+                                val_loader=val_loader, test_loader=test_loader,
                                 num_ns_eval=9, task_type="classification", tokenizer=tokenizer,
                                 validate_every_epoch=1, num_validation_batches=-1,
                                 num_epochs=1, lr=0.0005, sacred_ex=None,

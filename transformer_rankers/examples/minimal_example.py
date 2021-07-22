@@ -1,25 +1,25 @@
 from transformer_rankers.models import pointwise_bert
 from transformer_rankers.trainers import transformer_trainer
 from transformer_rankers.datasets import dataset, preprocess_crr
-from transformer_rankers.negative_samplers import negative_sampling 
+from transformer_rankers.negative_samplers import negative_sampling
 from transformer_rankers.eval import results_analyses_tools
 from transformer_rankers.datasets import downloader
 
 from transformers import BertTokenizerFast
 import pandas as pd
-import logging 
+import logging
 
 
 def main():
-   logging.basicConfig(level=logging.INFO,  
+   logging.basicConfig(level=logging.INFO,
                      format="%(asctime)s [%(levelname)s] %(message)s",
-                     handlers=[logging.StreamHandler()])   
+                     handlers=[logging.StreamHandler()])
    task = 'qqp'
    data_folder = "../../data/"
    logging.info("Starting downloader for task {}".format(task))
 
    dataDownloader = downloader.DataDownloader(task, data_folder)
-   dataDownloader.download_and_preprocess()   
+   dataDownloader.download_and_preprocess()
 
    train = pd.read_csv("{}/{}/train.tsv".format(data_folder, task), sep="\t")
    valid = pd.read_csv("{}/{}/valid.tsv".format(data_folder, task), sep="\t")
@@ -31,11 +31,11 @@ def main():
 
    tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
 
-   #Create the loaders for the datasets, with the respective negative samplers        
+   #Create the loaders for the datasets, with the respective negative samplers
    dataloader = dataset.QueryDocumentDataLoader(train_df=train, val_df=valid, test_df=valid,
-                                 tokenizer=tokenizer, negative_sampler_train=ns_train, 
-                                 negative_sampler_val=ns_val, task_type='classification', 
-                                 train_batch_size=6, val_batch_size=6, max_seq_len=100, 
+                                 tokenizer=tokenizer, negative_sampler_train=ns_train,
+                                 negative_sampler_val=ns_val, task_type='classification',
+                                 train_batch_size=6, val_batch_size=6, max_seq_len=100,
                                  sample_data=-1, cache_path="{}/{}".format(data_folder, task))
 
    train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
@@ -45,10 +45,10 @@ def main():
 
    #Instantiate trainer that handles fitting.
    trainer = transformer_trainer.TransformerTrainer(model=model,train_loader=train_loader,
-                                 val_loader=val_loader, test_loader=test_loader, 
+                                 val_loader=val_loader, test_loader=test_loader,
                                  num_ns_eval=9, task_type="classification", tokenizer=tokenizer,
                                  validate_every_epochs=1, num_validation_batches=-1,
-                                 num_epochs=1, lr=0.0005, sacred_ex=None, 
+                                 num_epochs=1, lr=0.0005, sacred_ex=None,
                                  validate_every_steps=100)
 
    #Train the model
@@ -66,4 +66,3 @@ def main():
 
 if __name__ == "__main__":
     main()
- 

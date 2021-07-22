@@ -1,6 +1,6 @@
 from transformer_rankers.trainers import transformer_trainer
 from transformer_rankers.datasets import dataset, preprocess_crr, preprocess_sqr
-from transformer_rankers.negative_samplers import negative_sampling 
+from transformer_rankers.negative_samplers import negative_sampling
 from transformer_rankers.eval import results_analyses_tools
 from transformer_rankers.models import pointwise_bert
 
@@ -39,12 +39,12 @@ def run_experiment(args):
     # tokenizer = BertTokenizer.from_pretrained(args.transformer_model)
     tokenizer = BertTokenizerFast.from_pretrained(args.transformer_model)
     # Conversation Response Ranking datasets needs special tokens
-    if args.task in ["mantis", "msdialog", "ubuntu_dstc8"]: 
+    if args.task in ["mantis", "msdialog", "ubuntu_dstc8"]:
         special_tokens_dict = {'additional_special_tokens': ['[UTTERANCE_SEP]', '[TURN_SEP]'] }
-        tokenizer.add_special_tokens(special_tokens_dict)        
+        tokenizer.add_special_tokens(special_tokens_dict)
 
     #Load datasets
-    train = pd.read_csv(args.data_folder+args.task+"/train.tsv", sep="\t", 
+    train = pd.read_csv(args.data_folder+args.task+"/train.tsv", sep="\t",
                         nrows=args.sample_data if args.sample_data != -1 else None)
     valid = pd.read_csv(args.data_folder+args.task+"/valid.tsv", sep="\t",
                         nrows=args.sample_data if args.sample_data != -1 else None)
@@ -54,11 +54,11 @@ def run_experiment(args):
     if args.train_negative_sampler == 'random':
         ns_train = negative_sampling.RandomNegativeSampler(list(train[document_col].values), args.num_ns_train)
     elif args.train_negative_sampler == 'bm25':
-        ns_train = negative_sampling.BM25NegativeSamplerPyserini(list(train[document_col].values), args.num_ns_train, 
+        ns_train = negative_sampling.BM25NegativeSamplerPyserini(list(train[document_col].values), args.num_ns_train,
                     args.data_folder+args.task+"/anserini_train/", args.sample_data, args.anserini_folder)
     elif args.train_negative_sampler == 'sentenceBERT':
-        ns_train = negative_sampling.SentenceBERTNegativeSampler(list(train[document_col].values), args.num_ns_train, 
-                    args.data_folder+args.task+"/train_sentenceBERTembeds", args.sample_data, args.bert_sentence_model)        
+        ns_train = negative_sampling.SentenceBERTNegativeSampler(list(train[document_col].values), args.num_ns_train,
+                    args.data_folder+args.task+"/train_sentenceBERTembeds", args.sample_data, args.bert_sentence_model)
 
     if args.test_negative_sampler == 'random':
         ns_val = negative_sampling.RandomNegativeSampler(list(valid[document_col].values) + list(train[document_col].values), args.num_ns_eval)
@@ -173,7 +173,7 @@ def main():
     ex.add_config({'args': args})
 
     wandb.init(project=args.wandb_project)
-    wandb.config.update(args)   
+    wandb.config.update(args)
     return ex.run()
 
 if __name__ == "__main__":

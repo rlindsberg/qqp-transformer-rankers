@@ -1,5 +1,6 @@
 from transformer_rankers.eval import evaluation
 
+
 def evaluate(preds, labels):
     qrels = {}
     qrels['model'] = {}
@@ -9,17 +10,18 @@ def evaluate(preds, labels):
     results = evaluation.evaluate_models(qrels)
     return results
 
+
 def evaluate_and_aggregate(preds, labels, metrics):
     """
     Calculate evaluation metrics for a pair of preds and labels.
-    
+
     Aggregates the results only for the evaluation metrics in metrics arg.
 
     Args:
         preds: list of lists of floats with predictions for each query.
         labels: list of lists with of floats with relevance labels for each query.
         metrics: list of str with the metrics names to aggregate.
-        
+
     Returns: dict with the METRIC results per model and query.
     """
     results = evaluate(preds, labels)

@@ -8,7 +8,7 @@ def transform_quora_question_pairs_to_duplicates_dfs(path):
 
     Args:
         path: str with the path for the csv file.
-        
+
     Returns: (train, valid, test) pandas DataFrames
     """
     df = pd.read_csv(path)
@@ -29,9 +29,9 @@ def transform_linkso_to_duplicates_dfs(path):
 
     Args:
         path: str with the folder containing java javascript python folders each containing
-        the following files [<language>_cosidf.txt, <language>_qid2all.txt, <language>_test_qid.txt, 
+        the following files [<language>_cosidf.txt, <language>_qid2all.txt, <language>_test_qid.txt,
         <language>_train_qid.txt, <language>_valid_qid.txt].
-        
+
     Returns: (train, valid, test) pandas DataFrames
     """
     train, valid, test = [], [], []
@@ -51,11 +51,11 @@ def transform_linkso_to_duplicates_dfs(path):
         with open(path+folder+"/"+folder+"_test_qid.txt") as f:
             test_ids = f.readlines()
             test_ids = set([x.strip() for x in test_ids])
-        labels_df = pd.read_csv(path+folder+"/"+folder+"_cosidf.txt", sep="\t")        
+        labels_df = pd.read_csv(path+folder+"/"+folder+"_cosidf.txt", sep="\t")
         labels_df_only_duplicate = labels_df[labels_df["label"] == 1]
         labels_df_only_duplicate["qid1"] = labels_df_only_duplicate["qid1"].astype(str)
         labels_df_only_duplicate["qid2"] = labels_df_only_duplicate["qid2"].astype(str)
-        
+
         for _, r in labels_df_only_duplicate.iterrows():
             if r["qid1"] in train_ids:
                 train.append([id_to_doc[r["qid1"]], id_to_doc[r["qid2"]]])

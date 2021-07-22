@@ -13,8 +13,8 @@ import ir_datasets
 def antique(data_folder):
     """
     Downloads and transforms the ANTIQUE dataset using the ir_datasets library
-    """    
-    def load_split(split):    
+    """
+    def load_split(split):
         dataset = ir_datasets.load(split)
         docs = {}
         for doc_id, text in dataset.docs_iter():
@@ -26,7 +26,7 @@ def antique(data_folder):
 
         split_data = []
         for query_id, doc_id, rel, iteration in dataset.qrels_iter():
-            split_data.append([query[query_id], docs[doc_id], rel])        
+            split_data.append([query[query_id], docs[doc_id], rel])
         return pd.DataFrame(split_data, columns=['query', 'passage', 'rel'])
 
     train = load_split('antique/train/split200-train')
@@ -44,7 +44,7 @@ def linkso_processor(data_folder):
     """
     # tar xvf linkso.tar.gz
     collection_tar = tarfile.open(data_folder+"drive_file")
-    collection_tar.extractall(data_folder) 
+    collection_tar.extractall(data_folder)
     collection_tar.close()
 
     train, valid, test = preprocess_sqr.\
@@ -58,7 +58,7 @@ def linkso_processor(data_folder):
 
 def qqp_processor(data_folder):
     """
-    Extracts the files from Quora Question Pairs downloaded from the drive 
+    Extracts the files from Quora Question Pairs downloaded from the drive
     and creates dfs with ["question", "similar_question"].
     """
     with zipfile.ZipFile(data_folder+"drive_file","r") as zip_ref:
@@ -85,7 +85,7 @@ def trec2020pr_processor(data_folder):
     Extracts the files downloaded and process them into a DF with ["query", "passage"]
     """
     collection_tar = tarfile.open(data_folder+"collection.tar.gz")
-    collection_tar.extractall(data_folder) 
+    collection_tar.extractall(data_folder)
     collection_tar.close()
     queries_tar = tarfile.open(data_folder+"queries.tar.gz")
     queries_tar.extractall(data_folder)
@@ -149,7 +149,7 @@ def ubuntu_dstc8_processor(data_folder):
     #Transform tsv to two column pandas dfs.
     train = preprocess_crr.read_crr_tsv_as_df(data_folder+"/train.tsv", -1, add_turn_separator=False)
     valid = preprocess_crr.read_crr_tsv_as_df(data_folder+"/valid.tsv", -1, add_turn_separator=False)
-    
+
     #Save files with correct formats
     train.to_csv(data_folder+"/train.tsv", index=False, sep="\t")
     valid[0:int(valid.shape[0]/2)].to_csv(data_folder+"/valid.tsv", index=False, sep="\t")
@@ -168,7 +168,7 @@ def msdialog_processor(data_folder):
     """
     #Deal with drive files
     my_tar = tarfile.open(data_folder+"drive_file")
-    my_tar.extractall(data_folder) 
+    my_tar.extractall(data_folder)
     my_tar.close()
 
     #Transform tsv to two column pandas dfs.
@@ -215,4 +215,3 @@ def mantis_processor(data_folder):
     # os.remove(data_folder+"data_train_easy.tsv")
     # os.remove(data_folder+"data_dev_easy.tsv")
     # os.remove(data_folder+"data_test_easy.tsv")
-

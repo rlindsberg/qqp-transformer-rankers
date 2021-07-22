@@ -39,20 +39,20 @@ def main():
 
     identifier_cols = args.identifier_columns.split(",")
     all_metrics = []
-    all_logits = []    
+    all_logits = []
     folders = [args.model_outputs_folder+name for name in os.listdir(args.model_outputs_folder) if os.path.isdir(args.model_outputs_folder+name)]
-    for run_folder in folders:        
+    for run_folder in folders:
         try:
             with open(run_folder+"/config.json") as f:
                 config = json.load(f)['args']
                 config['seed'] = str(config['seed'])
-            
+
                 logging.info("Run %s" % (run_folder))
                 logging.info("Seed %s" % config['seed'])
                 logging.info("Task %s" % (config['task']))
 
                 predictions = pd.read_csv(run_folder+"/predictions.csv")
-                labels = pd.read_csv(run_folder+"/labels.csv")                
+                labels = pd.read_csv(run_folder+"/labels.csv")
                 results = results_analyses_tools.evaluate(utils.from_df_to_list_without_nans(predictions),
                                                           utils.from_df_to_list_without_nans(labels))
                 predictions["seed"] = str(config['seed'])
@@ -83,8 +83,8 @@ def main():
             logging.info("Error on folder {}".format(run_folder))
             logging.info(traceback.format_exception(*sys.exc_info()))
             # raise # reraises the exception
-    
-    all_metrics_df = pd.DataFrame(all_metrics, columns= identifier_cols 
+
+    all_metrics_df = pd.DataFrame(all_metrics, columns= identifier_cols
                                                 + ['dataset', 'seed', 'run']
                                                 + metrics_cols)
 
@@ -120,7 +120,7 @@ def main():
             metric_avgs = {}
             for metric in METRICS:
                 by_query = []
-                for i, r in group.iterrows():            
+                for i, r in group.iterrows():
                     by_query.append(r[metric+"_per_query"])
                 by_query = np.array(by_query)
                 metric_avgs[metric+"_per_query_averaged"] = by_query.mean(axis=0)
@@ -132,9 +132,9 @@ def main():
 
         # join with baseline values
         baseline = args.baseline_values
-        baseline_values = baseline.split(",")    
+        baseline_values = baseline.split(",")
         baseline_runs = averaged_over_queries
-        for i, id_col in enumerate(identifier_cols):        
+        for i, id_col in enumerate(identifier_cols):
             baseline_runs = baseline_runs[baseline_runs[id_col].astype(str) == baseline_values[i]]
 
         averaged_over_queries = averaged_over_queries.merge(baseline_runs, on=['dataset'])
@@ -149,7 +149,7 @@ def main():
             averaged_over_queries["neg_and_p_value<0.05"+metric] = averaged_over_queries.apply(lambda r, metric=metric:
                 r["p_value_stat_"+metric][1]<0.05 and r["p_value_stat_"+metric][0] < 0, axis=1)
         cols_to_add = [c for c in averaged_over_queries.columns if "gain_" in c]
-        cols_to_add+= [c for c in averaged_over_queries.columns if "p_value" in c]        
+        cols_to_add+= [c for c in averaged_over_queries.columns if "p_value" in c]
         averaged_over_queries[['dataset'] + [i+"_x" for i in identifier_cols] + cols_to_add].round(4).\
             to_csv(args.output_folder+"_aggregated_results_gains_t_tests.csv", index=False, sep="\t")
 

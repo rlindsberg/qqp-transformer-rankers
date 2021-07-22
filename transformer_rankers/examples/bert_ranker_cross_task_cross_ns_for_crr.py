@@ -1,6 +1,6 @@
 from transformer_rankers.trainers import transformer_trainer
 from transformer_rankers.datasets import dataset, preprocess_crr, preprocess_sqr
-from transformer_rankers.negative_samplers import negative_sampling 
+from transformer_rankers.negative_samplers import negative_sampling
 from transformer_rankers.eval import results_analyses_tools
 
 from transformers import BertTokenizer, BertForSequenceClassification
@@ -14,7 +14,7 @@ import argparse
 import logging
 import sys
 import json
-import os 
+import os
 ex = Experiment('BERT-ranker experiment')
 
 logging.basicConfig(
@@ -34,7 +34,7 @@ def run_experiment(args):
 
     tokenizer = BertTokenizer.from_pretrained(args.transformer_model)
     #Load datasets
-    train = pd.read_csv(args.data_folder+args.task+"/train_test.tsv", sep="\t", 
+    train = pd.read_csv(args.data_folder+args.task+"/train_test.tsv", sep="\t",
                         nrows=args.sample_data if args.sample_data != -1 else None)
     valid = pd.read_csv(args.data_folder+args.task+"/valid_test.tsv", sep="\t",
                         nrows=args.sample_data if args.sample_data != -1 else None)
@@ -42,14 +42,14 @@ def run_experiment(args):
     tokenizer.add_special_tokens(special_tokens_dict)
 
     #Choose the negative candidate sampler
-    document_col = train.columns[1]    
-    ns_train = negative_sampling.BM25NegativeSamplerPyserini(list(train[document_col].values), args.num_ns_train, 
+    document_col = train.columns[1]
+    ns_train = negative_sampling.BM25NegativeSamplerPyserini(list(train[document_col].values), args.num_ns_train,
                 args.data_folder+args.task+"/anserini_train/", args.sample_data, args.anserini_folder)
 
     ns_val_random = negative_sampling.RandomNegativeSampler(list(valid[document_col].values)
                     + list(train[document_col].values), args.num_ns_eval)
     ns_val_bm25 = negative_sampling.BM25NegativeSamplerPyserini(list(valid[document_col].values) + list(train[document_col].values),
-                    args.num_ns_eval, args.data_folder+args.task+"/anserini_valid/", args.sample_data, args.anserini_folder) 
+                    args.num_ns_eval, args.data_folder+args.task+"/anserini_valid/", args.sample_data, args.anserini_folder)
     ns_val_bert_sentence = negative_sampling.SentenceBERTNegativeSampler(list(valid[document_col].values) + list(train[document_col].values),
                 args.num_ns_eval, args.data_folder+args.task+"/valid_sentenceBERTembeds", args.sample_data, args.bert_sentence_model)
 
@@ -61,8 +61,8 @@ def run_experiment(args):
                                 ("sentenceBERT", ns_val_bert_sentence)]:
         dataloader = dataset.QueryDocumentDataLoader(train, valid, valid,
                                     tokenizer, ns_train, ns_val,
-                                    'classification', args.train_batch_size, 
-                                    args.val_batch_size, args.max_seq_len, 
+                                    'classification', args.train_batch_size,
+                                    args.val_batch_size, args.max_seq_len,
                                     args.sample_data, args.data_folder + args.task)
         train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
         cross_ns_val[ns_name] = val_loader
@@ -73,8 +73,8 @@ def run_experiment(args):
     model.resize_token_embeddings(len(dataloader.tokenizer))
 
     #Instantiate trainer that handles fitting.
-    trainer = transformer_trainer.TransformerTrainer(model, cross_ns_train["bm25"], 
-                                 cross_ns_val["bm25"], cross_ns_val["bm25"], 
+    trainer = transformer_trainer.TransformerTrainer(model, cross_ns_train["bm25"],
+                                 cross_ns_val["bm25"], cross_ns_val["bm25"],
                                  args.num_ns_eval, "classification", tokenizer,
                                  args.validate_every_epochs, args.num_validation_batches,
                                  args.num_epochs, args.lr, args.sacred_ex)
@@ -88,7 +88,7 @@ def run_experiment(args):
     for ns_index, ns_name in enumerate(["random", "bm25", "sentenceBERT"]):
         logging.info("Predicting for NS {}".format(ns_name))
         os.makedirs(args.output_dir+"/"+str(int(args.run_id)+ns_index), exist_ok=True)
-        with open(args.output_dir+"/"+str(int(args.run_id)+ns_index)+"/config.json", "w") as f:            
+        with open(args.output_dir+"/"+str(int(args.run_id)+ns_index)+"/config.json", "w") as f:
             config_w = {'args': vars(args)}
             config_w['args']['test_dataset'] = args.task
             config_w['args']['train_negative_sampler'] = 'bm25'
@@ -116,12 +116,12 @@ def run_experiment(args):
             torch.save(model.state_dict(), args.output_dir+"/"+str(int(args.run_id)+ns_index)+"/model")
 
         #In case we want to get uncertainty estimations at prediction time
-        if args.predict_with_uncertainty_estimation:  
+        if args.predict_with_uncertainty_estimation:
             logging.info("Predicting with dropout.")
             trainer.num_validation_batches =-1 # no sample
             preds, labels, softmax_logits, foward_passes_preds, uncertainties = \
                 trainer.predict_with_uncertainty(cross_ns_val[ns_name], args.num_foward_prediction_passes)
-            
+
             max_preds_column = max([len(l) for l in preds])
             preds_df = pd.DataFrame(preds, columns=["prediction_"+str(i) for i in range(max_preds_column)])
             preds_df.to_csv(args.output_dir+"/"+str(int(args.run_id)+ns_index)+"/predictions_with_dropout.csv", index=False)
@@ -135,7 +135,7 @@ def run_experiment(args):
 
             labels_df = pd.DataFrame(labels, columns=["label_"+str(i) for i in range(max_preds_column)])
             labels_df.to_csv(args.output_dir+"/"+str(int(args.run_id)+ns_index)+"/labels.csv", index=False)
-            
+
             uncertainties_df = pd.DataFrame(uncertainties, columns=["uncertainty_"+str(i) for i in range(max_preds_column)])
             uncertainties_df.to_csv(args.output_dir+"/"+str(int(args.run_id)+ns_index)+"/uncertainties.csv", index=False)
 
@@ -146,14 +146,14 @@ def run_experiment(args):
     for cross_task in cross_datasets:
         train_cross = preprocess_crr.read_crr_tsv_as_df(args.data_folder+cross_task+"/train.tsv", args.sample_data, add_turn_separator)
         valid_cross = preprocess_crr.read_crr_tsv_as_df(args.data_folder+cross_task+"/valid.tsv", args.sample_data, add_turn_separator)
-        ns_train_cross = negative_sampling.BM25NegativeSamplerPyserini(list(train_cross[document_col].values), args.num_ns_train, 
+        ns_train_cross = negative_sampling.BM25NegativeSamplerPyserini(list(train_cross[document_col].values), args.num_ns_train,
                 args.data_folder+cross_task+"/anserini_train/", args.sample_data, args.anserini_folder)
         ns_val_bm25_cross = negative_sampling.BM25NegativeSamplerPyserini(list(valid_cross[document_col].values) + list(train_cross[document_col].values),
-                        args.num_ns_eval, args.data_folder+cross_task+"/anserini_valid/", args.sample_data, args.anserini_folder) 
+                        args.num_ns_eval, args.data_folder+cross_task+"/anserini_valid/", args.sample_data, args.anserini_folder)
         dataloader = dataset.QueryDocumentDataLoader(train_cross, valid_cross, valid_cross,
                             tokenizer, ns_train_cross, ns_val_bm25_cross,
-                            'classification', args.train_batch_size, 
-                            args.val_batch_size, args.max_seq_len, 
+                            'classification', args.train_batch_size,
+                            args.val_batch_size, args.max_seq_len,
                             args.sample_data, args.data_folder + cross_task)
         _, val_loader, _ = dataloader.get_pytorch_dataloaders()
         cross_data_val_dataloader[cross_task] = val_loader
@@ -161,7 +161,7 @@ def run_experiment(args):
     for task_index, cross_task in enumerate(cross_datasets):
         logging.info("Predicting for dataset {}".format(cross_task))
         os.makedirs(args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1), exist_ok=True)
-        with open(args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1)+"/config.json", "w") as f:            
+        with open(args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1)+"/config.json", "w") as f:
             config_w = {'args': vars(args)}
             config_w['args']['test_dataset'] = cross_task
             config_w['args']['train_negative_sampler'] = 'bm25'
@@ -189,11 +189,11 @@ def run_experiment(args):
             torch.save(model.state_dict(), args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1)+"/model")
 
         #In case we want to get uncertainty estimations at prediction time
-        if args.predict_with_uncertainty_estimation:  
+        if args.predict_with_uncertainty_estimation:
             logging.info("Predicting with dropout.")
             preds, labels, softmax_logits, foward_passes_preds, uncertainties = \
                 trainer.predict_with_uncertainty(cross_data_val_dataloader[cross_task], args.num_foward_prediction_passes)
-            
+
             max_preds_column = max([len(l) for l in preds])
             preds_df = pd.DataFrame(preds, columns=["prediction_"+str(i) for i in range(max_preds_column)])
             preds_df.to_csv(args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1)+"/predictions_with_dropout.csv", index=False)
@@ -207,7 +207,7 @@ def run_experiment(args):
 
             labels_df = pd.DataFrame(labels, columns=["label_"+str(i) for i in range(max_preds_column)])
             labels_df.to_csv(args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1)+"/labels.csv", index=False)
-            
+
             uncertainties_df = pd.DataFrame(uncertainties, columns=["uncertainty_"+str(i) for i in range(max_preds_column)])
             uncertainties_df.to_csv(args.output_dir+"/"+str(int(args.run_id)+ns_index+task_index+1)+"/uncertainties.csv", index=False)
     return 0.0

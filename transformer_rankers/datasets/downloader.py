@@ -11,15 +11,15 @@ TASK_TO_URLS = {
     "clariq": ["https://github.com/aliannejadi/ClariQ/raw/master/data/train.tsv",
                "https://github.com/aliannejadi/ClariQ/raw/master/data/dev.tsv"], # https://github.com/aliannejadi/ClariQ
     # Conversation Response Ranking (CRR)
-    "mantis": [ "https://docs.google.com/uc?export=download&id=17Uj9EwyGGCk9w_LIqDjlTx1y4MU7xxPv"], # https://guzpenha.github.io/MANtIS/ 
+    "mantis": [ "https://docs.google.com/uc?export=download&id=17Uj9EwyGGCk9w_LIqDjlTx1y4MU7xxPv"], # https://guzpenha.github.io/MANtIS/
     "msdialog": [ "https://docs.google.com/uc?export=download&id=1R_c8b7Yi0wChA_du3eKDtnOGuYTqVhnY"], # https://ciir.cs.umass.edu/downloads/msdialog/
     "ubuntu_dstc8": ["https://docs.google.com/uc?export=download&id=1Ypu-tIu4nT3rZ86bcqAx-lKeNomyve5N"], # https://github.com/dstc8-track2/NOESIS-II
     # Passage Retrieval (PR)
-    "trec2020pr": ["https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz", 
+    "trec2020pr": ["https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
                     "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
                     "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.dev.tsv",
                     "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv"], #https://microsoft.github.io/TREC-2020-Deep-Learning/
-    "antique": ["ir-datasets"], 
+    "antique": ["ir-datasets"],
     #Similar Question Retrieval (SQR)
     "qqp": ["https://docs.google.com/uc?export=download&id=1KAFO5l7H89zuNcSQrH08JvcD5bM7S2A_"], # https://www.kaggle.com/c/quora-question-pairs
     "linkso": ["https://docs.google.com/uc?export=download&id=1X5GoVi_OcRxahXH1pRW7TSesZUeMH3ss"] # https://sites.google.com/view/linkso
@@ -68,7 +68,7 @@ class DataDownloader():
         self.processor(self.data_folder+self.task+"/")
 
 
-# Code to download from google drive from 
+# Code to download from google drive from
 # https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
 def download_file_from_google_drive(id, destination):
     URL = "https://docs.google.com/uc?export=download"
@@ -82,7 +82,7 @@ def download_file_from_google_drive(id, destination):
         params = { 'id' : id, 'confirm' : token }
         response = session.get(URL, params = params, stream = True)
 
-    save_response_content(response, destination)    
+    save_response_content(response, destination)
 
 def get_confirm_token(response):
     for key, value in response.cookies.items():

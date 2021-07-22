@@ -1,6 +1,6 @@
 from IPython import embed
 from transformer_rankers.negative_samplers import negative_sampling
-from transformer_rankers.datasets import preprocess_crr 
+from transformer_rankers.datasets import preprocess_crr
 from transformers import BertTokenizer
 from tqdm import tqdm
 
@@ -26,7 +26,7 @@ def main():
                         help="random seed")
     parser.add_argument("--num_ns_train", default=1, type=int, required=False,
                         help="Number of negatively sampled documents to use during training")
-    
+
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO,
@@ -41,12 +41,12 @@ def main():
     train = preprocess_crr.read_crr_tsv_as_df(args.data_folder+args.task+"/train.tsv", args.sample_data, add_turn_separator)
     valid = preprocess_crr.read_crr_tsv_as_df(args.data_folder+args.task+"/valid.tsv", args.sample_data, add_turn_separator)
 
-    tokenizer = BertTokenizer.from_pretrained("bert-base-cased")        
-    ns_valid_random = negative_sampling.RandomNegativeSampler(list(train["response"].values)+list(valid["response"].values), args.num_ns_train)    
+    tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
+    ns_valid_random = negative_sampling.RandomNegativeSampler(list(train["response"].values)+list(valid["response"].values), args.num_ns_train)
     ns_valid_bm25 = negative_sampling.BM25NegativeSamplerPyserini(list(train["response"].values)+list(valid["response"].values), args.num_ns_train,
                 args.data_folder+args.task+"/anserini_valid/", args.sample_data, args.anserini_folder, set_rm3=True)
-    ns_valid_sentenceBERT = negative_sampling.SentenceBERTNegativeSampler(list(train["response"].values)+list(valid["response"].values), args.num_ns_train, 
-                args.data_folder+args.task+"/valid_sentenceBERTembeds", args.sample_data, 
+    ns_valid_sentenceBERT = negative_sampling.SentenceBERTNegativeSampler(list(train["response"].values)+list(valid["response"].values), args.num_ns_train,
+                args.data_folder+args.task+"/valid_sentenceBERTembeds", args.sample_data,
                 args.data_folder+args.task+"/bert-base-cased_{}".format(args.task)) #pre-trained embedding
 
     examples = []
@@ -57,7 +57,7 @@ def main():
         ["bm25_retrieved_relevant", "bm25_rank"]+  \
         ["cand_sentenceBERT_{}".format(i) for i in range(args.num_ns_train)] + \
         ["sentenceBERT_retrieved_relevant", "sentenceBERT_rank"]
-    
+
     logging.info("Retrieving candidates using random, bm25 and sentenceBERT.")
     for idx, row in enumerate(tqdm(valid.itertuples(index=False), total=len(valid))):
         context = row[0]
