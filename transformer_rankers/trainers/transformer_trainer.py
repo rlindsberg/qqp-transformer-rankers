@@ -2,6 +2,8 @@ from IPython import embed
 from tqdm import tqdm
 from transformer_rankers.eval import results_analyses_tools
 from transformer_rankers.utils import utils
+from transformer_rankers.models import pointwise_bert
+
 
 import logging
 import torch
@@ -63,9 +65,9 @@ class TransformerTrainer:
         logging.info("Num GPU {}".format(self.num_gpu))
         self.model = model.to(self.device)
 
-        if self.num_gpu > 1:
-            devices = [v for v in range(self.num_gpu)]
-            self.model = nn.DataParallel(self.model, device_ids=devices)
+        # if self.num_gpu > 1:
+        #     devices = [v for v in range(self.num_gpu)]
+        #     self.model = nn.DataParallel(self.model, device_ids=devices)
 
         self.best_eval_metric = 0
         self.train_loader = train_loader
@@ -91,8 +93,8 @@ class TransformerTrainer:
             logging.info("Validating every {} epoch.".format(self.validate_every_epochs))
         if self.validate_every_steps > 0:
             logging.info("Validating every {} step.".format(self.validate_every_steps))
-        # if self._has_wandb:
-        #     wandb.watch(self.model)
+        if self._has_wandb:
+            wandb.watch(self.model, log='all')
 
         total_steps = 0
         total_loss = 0
@@ -106,6 +108,7 @@ class TransformerTrainer:
             logging.info("Actual epochs (rounded up): {}".format(actual_epochs))
 
         for epoch in range(actual_epochs):
+            print('tqdm remaining time is for 1 epoch!')
             epoch_batches_tqdm = tqdm(self.train_loader, desc="Epoch {}, steps".format(epoch),
                                       total=len(self.train_loader))
             for batch_inputs in epoch_batches_tqdm:
@@ -169,6 +172,13 @@ class TransformerTrainer:
                     wandb.log({'epoch': epoch + 1, "avg_loss_by_epoch": total_loss / total_steps})
                 epoch_batches_tqdm.set_description(
                     "Epoch {} ({}: {:3f}), steps".format(epoch, self.validation_metric, val_metric_res))
+
+            # at the end of each epoch
+            checkpoint_path = f'trained_model_epoch_{epoch}'
+            pointwise_bert.BertForPointwiseLearning.save_pretrained(self.model, checkpoint_path)
+            wandb.save(checkpoint_path + 'config.json')
+            wandb.save(checkpoint_path + 'pytorch_model.bin')
+            logging.info('Model checkpoint saved to wandb')
 
     def predict(self, loader):
         """
