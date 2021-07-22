@@ -61,8 +61,8 @@ class TransformerTrainer:
 
         self.num_gpu = torch.cuda.device_count()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logging.info("Device {}".format(self.device))
-        logging.info("Num GPU {}".format(self.num_gpu))
+        print("Device {}".format(self.device))
+        print("Num GPU {}".format(self.num_gpu))
         self.model = model.to(self.device)
 
         # if self.num_gpu > 1:
@@ -88,13 +88,13 @@ class TransformerTrainer:
         """
         Trains the transformer-based neural ranker.
         """
-        logging.info("Total batches per epoch : {}".format(len(self.train_loader)))
+        print("Total batches per epoch : {}".format(len(self.train_loader)))
         if self.validate_every_epochs > 0:
-            logging.info("Validating every {} epoch.".format(self.validate_every_epochs))
+            print("Validating every {} epoch.".format(self.validate_every_epochs))
         if self.validate_every_steps > 0:
-            logging.info("Validating every {} step.".format(self.validate_every_steps))
+            print("Validating every {} step.".format(self.validate_every_steps))
         if self._has_wandb:
-            wandb.watch(self.model, log='all')
+            wandb.watch(self.model, log='all', log_freq=100)
 
         total_steps = 0
         total_loss = 0
@@ -105,12 +105,16 @@ class TransformerTrainer:
         else:
             instances_in_one_epoch = len(self.train_loader) * self.train_loader.batch_size
             actual_epochs = -(-self.num_training_instances // instances_in_one_epoch)  # rounding up
-            logging.info("Actual epochs (rounded up): {}".format(actual_epochs))
+            print("Actual epochs (rounded up): {}".format(actual_epochs))
+
+        print(f'Training for {actual_epochs} epochs\n')
 
         for epoch in range(actual_epochs):
             print('tqdm remaining time is for 1 epoch!')
             epoch_batches_tqdm = tqdm(self.train_loader, desc="Epoch {}, steps".format(epoch),
                                       total=len(self.train_loader))
+
+            print(f'epoch_batches_tqdm is {epoch_batches_tqdm}\n')
             for batch_inputs in epoch_batches_tqdm:
                 self.model.train()
 
@@ -134,7 +138,7 @@ class TransformerTrainer:
                 total_instances += batch_inputs[k].shape[0]
 
                 if self.num_training_instances != -1 and total_instances >= self.num_training_instances:
-                    logging.info("Reached num_training_instances of {} ({} batches). Early stopping.".format(
+                    print("Reached num_training_instances of {} ({} batches). Early stopping.".format(
                         self.num_training_instances, total_steps))
                     break
 
@@ -178,7 +182,7 @@ class TransformerTrainer:
             pointwise_bert.BertForPointwiseLearning.save_pretrained(self.model, checkpoint_path)
             wandb.save(checkpoint_path + '/config.json')
             wandb.save(checkpoint_path + '/pytorch_model.bin')
-            logging.info('Model checkpoint saved to wandb')
+            print('Model checkpoint saved to wandb')
 
     def predict(self, loader):
         """

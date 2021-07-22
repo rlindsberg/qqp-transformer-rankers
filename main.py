@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO,  format="%(asctime)s [%(levelname)s] %(m
 
 task = 'qqp'
 data_folder = "./data/"
-logging.info("Starting downloader for task {}".format(task))
+print("Starting downloader for task {}".format(task))
 
 dataDownloader = downloader.DataDownloader(task, data_folder)
 dataDownloader.download_and_preprocess()
@@ -56,11 +56,11 @@ trainer = transformer_trainer.TransformerTrainer(model=model,train_loader=train_
                                 validate_every_steps=-1, num_training_instances=-1)
 
 #Train the model
-logging.info("Fitting monoBERT for {}".format(task))
+print("Fitting monoBERT for {}".format(task))
 trainer.fit()
 
 #Predict for test (in our example the validation set)
-logging.info("Predicting")
+print("Predicting")
 preds, labels, softmax = trainer.test()
 print('softmax\n ')
 print(softmax)
@@ -68,7 +68,7 @@ res = results_analyses_tools.\
     evaluate_and_aggregate(preds, labels, ['R_10@1', 'R_10@5', 'map'])
 
 for metric, v in res.items():
-    logging.info("Test {} : {:4f}".format(metric, v))
+    print("Test {} : {:4f}".format(metric, v))
 
 
 pointwise_bert.BertForPointwiseLearning.save_pretrained(model, 'transformer_ranker_10epoch')
