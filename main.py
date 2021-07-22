@@ -7,7 +7,9 @@ from transformer_rankers.negative_samplers import negative_sampling
 from transformer_rankers.eval import results_analyses_tools
 from transformer_rankers.models import pointwise_bert
 from transformer_rankers.datasets import downloader
+import wandb
 
+wandb.login()
 
 task = 'qqp'
 data_folder = "./data/"
@@ -19,7 +21,7 @@ dataDownloader.download_and_preprocess()
 train = pd.read_csv("./data/{}/train.tsv".format(task), sep="\t")
 
 valid = pd.read_csv(data_folder+task+"/valid.tsv", sep="\t")
-valid = valid[:100] #sampling so that eval is faster
+# valid = valid[:100] #sampling so that eval is faster
 
 
 # Random negative samplers
@@ -33,7 +35,7 @@ tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
 dataloader = dataset.QueryDocumentDataLoader(train_df=train, val_df=valid, test_df=valid,
                                 tokenizer=tokenizer, negative_sampler_train=ns_train,
                                 negative_sampler_val=ns_val, task_type='classification',
-                                train_batch_size=8, val_batch_size=8, max_seq_len=100,
+                                train_batch_size=32, val_batch_size=8, max_seq_len=100,
                                 sample_data=-1, cache_path="{}/{}".format(data_folder, task))
 
 train_loader, val_loader, test_loader = dataloader.get_pytorch_dataloaders()
@@ -65,4 +67,4 @@ for metric, v in res.items():
     logging.info("Test {} : {:4f}".format(metric, v))
 
 
-pointwise_bert.BertForPointwiseLearning.save_pretrained(model, 'transformer_ranker_10epoch_10inst')
+pointwise_bert.BertForPointwiseLearning.save_pretrained(model, 'transformer_ranker_10epoch')
