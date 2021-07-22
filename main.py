@@ -10,6 +10,10 @@ from transformer_rankers.datasets import downloader
 import wandb
 
 wandb.login()
+wandb.init()
+
+logging.basicConfig(level=logging.INFO,  format="%(asctime)s [%(levelname)s] %(message)s",
+                    handlers=[logging.StreamHandler()])
 
 task = 'qqp'
 data_folder = "./data/"
