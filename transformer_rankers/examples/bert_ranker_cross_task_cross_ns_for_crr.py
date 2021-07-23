@@ -98,7 +98,7 @@ def run_experiment(args):
             json.dump(config_w, f, indent=4)
         # preds, labels, softmax_logits = trainer.test()
         trainer.num_validation_batches =-1 # no sample
-        preds, labels, softmax_logits = trainer.predict(cross_ns_val[ns_name])
+        preds, labels, softmax_logits, _ = trainer.predict(cross_ns_val[ns_name])
 
         #Saving predictions and labels to a file
         max_preds_column = max([len(l) for l in preds])
@@ -171,7 +171,7 @@ def run_experiment(args):
             json.dump(config_w, f, indent=4)
         # preds, labels, softmax_logits = trainer.test()
         trainer.num_validation_batches =-1 # no sample
-        preds, labels, softmax_logits = trainer.predict(cross_data_val_dataloader[cross_task])
+        preds, labels, softmax_logits, _ = trainer.predict(cross_data_val_dataloader[cross_task])
 
         #Saving predictions and labels to a file
         max_preds_column = max([len(l) for l in preds])

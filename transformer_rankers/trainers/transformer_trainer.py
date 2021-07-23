@@ -97,7 +97,7 @@ class TransformerTrainer:
             wandb.watch(self.model, log='all', log_freq=100)
 
         total_steps = 0
-        total_loss = 0
+        total_train_loss = 0
         total_instances = 0
 
         if self.num_training_instances == -1:
@@ -128,7 +128,7 @@ class TransformerTrainer:
                     loss = loss.mean()
 
                 loss.backward()
-                total_loss += loss.item()
+                total_train_loss += loss.item()
 
                 nn.utils.clip_grad_norm_(self.model.parameters(),
                                          self.max_grad_norm)
@@ -143,19 +143,20 @@ class TransformerTrainer:
                     break
 
                 # logging for steps
+                print('logging for steps')
                 is_validation_step = (self.validate_every_steps > 0 and total_steps % self.validate_every_steps == 0)
                 if is_validation_step:
-                    logits, labels, _ = self.predict(loader=self.val_loader)
+                    logits, labels, _, _ = self.predict(loader=self.val_loader)
                     res = results_analyses_tools.evaluate_and_aggregate(logits, labels, [self.validation_metric])
                     val_metric_res = res[self.validation_metric]
                     if val_metric_res > self.best_eval_metric:
                         self.best_eval_metric = val_metric_res
                     if self.sacred_ex != None:
                         self.sacred_ex.log_scalar(self.validation_metric + "_by_step", val_metric_res, total_steps)
-                        self.sacred_ex.log_scalar("avg_loss_by_step", total_loss / total_steps, total_steps)
+                        self.sacred_ex.log_scalar("avg_loss_by_step", total_train_loss / total_steps, total_steps)
                     if self._has_wandb:
                         wandb.log({'step': total_steps, self.validation_metric + "_by_step": val_metric_res})
-                        wandb.log({'step': total_steps, "avg_loss_by_step": total_loss / total_steps})
+                        wandb.log({'step': total_steps, "avg_loss_by_step": total_train_loss / total_steps})
 
                     epoch_batches_tqdm.set_description(
                         "Epoch {} ({}: {:3f}), steps".format(epoch, self.validation_metric, val_metric_res))
@@ -163,21 +164,30 @@ class TransformerTrainer:
             # logging for epochs
             is_validation_epoch = (self.validate_every_epochs > 0 and epoch % self.validate_every_epochs == 0)
             if is_validation_epoch:
-                logits, labels, _ = self.predict(loader=self.val_loader)
+                logits, labels, softmax, val_loss = self.predict(loader=self.val_loader)
+                _, _, _, train_loss = self.predict(loader=self.train_loader)
                 res = results_analyses_tools.evaluate_and_aggregate(logits, labels, [self.validation_metric])
                 val_metric_res = res[self.validation_metric]
                 if val_metric_res > self.best_eval_metric:
                     self.best_eval_metric = val_metric_res
                 if self.sacred_ex != None:
                     self.sacred_ex.log_scalar(self.validation_metric + "_by_epoch", val_metric_res, epoch + 1)
-                    self.sacred_ex.log_scalar("avg_loss_by_epoch", total_loss / total_steps, epoch + 1)
+                    self.sacred_ex.log_scalar("avg_loss_by_epoch", total_train_loss / total_steps, epoch + 1)
                 if self._has_wandb:
                     wandb.log({'epoch': epoch + 1, self.validation_metric + "_by_epoch": val_metric_res})
-                    wandb.log({'epoch': epoch + 1, "avg_loss_by_epoch": total_loss / total_steps})
+                    wandb.log({'epoch': epoch + 1, "avg_train_loss_by_epoch": total_train_loss / total_steps})
+                    wandb.log({'epoch': epoch + 1, "train_loss_by_epoch": train_loss})
+                    wandb.log({'epoch': epoch + 1, "val_loss_by_epoch": val_loss})
+
                 epoch_batches_tqdm.set_description(
                     "Epoch {} ({}: {:3f}), steps".format(epoch, self.validation_metric, val_metric_res))
+            else:
+                _, _, softmax, _ = self.predict(loader=self.val_loader)
 
             # at the end of each epoch
+            print('softmax\n ')
+            print(softmax)
+
             checkpoint_path = f'trained_model_epoch_{epoch}'
             pointwise_bert.BertForPointwiseLearning.save_pretrained(self.model, checkpoint_path)
             wandb.save(checkpoint_path + '/config.json')
@@ -206,6 +216,7 @@ class TransformerTrainer:
             with torch.no_grad():
                 if self.task_type == "classification":
                     outputs = self.model(**batch)
+                    loss = outputs[0]
                     _, logits = outputs[:2]
                     all_labels += batch["labels"].int().tolist()  # this is required because of the weak supervision
                     all_logits += logits[:, 1].tolist()
@@ -232,7 +243,7 @@ class TransformerTrainer:
         all_labels = utils.acumulate_list_multiple_relevant(all_labels)
         all_logits = utils.acumulate_l1_by_l2(all_logits, all_labels)
         all_softmax_logits = utils.acumulate_l1_by_l2(all_softmax_logits, all_labels)
-        return all_logits, all_labels, all_softmax_logits
+        return all_logits, all_labels, all_softmax_logits, loss
 
     def predict_with_uncertainty(self, loader, foward_passes):
         """
