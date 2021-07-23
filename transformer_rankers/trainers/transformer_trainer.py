@@ -143,7 +143,6 @@ class TransformerTrainer:
                     break
 
                 # logging for steps
-                print('logging for steps')
                 is_validation_step = (self.validate_every_steps > 0 and total_steps % self.validate_every_steps == 0)
                 if is_validation_step:
                     logits, labels, _, _ = self.predict(loader=self.val_loader)
@@ -181,10 +180,10 @@ class TransformerTrainer:
 
                 epoch_batches_tqdm.set_description(
                     "Epoch {} ({}: {:3f}), steps".format(epoch, self.validation_metric, val_metric_res))
-            else:
-                _, _, softmax, _ = self.predict(loader=self.val_loader)
+
 
             # at the end of each epoch
+            _, _, softmax, _ = self.predict(loader=self.val_loader)
             print('softmax\n ')
             print(softmax)
 
